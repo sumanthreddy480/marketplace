@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import com.market.dao.MarketDao;
 import com.market.logging.MarketExceptionLog;
+import com.market.objects.Customer;
 import com.market.objects.Product;
 
 @Repository
@@ -20,18 +21,25 @@ public class MarketDaoImpl implements MarketDao {
 	private JdbcTemplate jdbcTemplate;
 
 	@Override
-	public int addItem(String customerName, Product product) {
+	public int addItem(Customer customer, Product product) {
 
 		int addedItem = 0;
 
 		StringBuffer sql = new StringBuffer();
 
 		try {
-			sql.append("	INSERT INTO itemlist(itemid, item, price)	")
-			   .append("		VALUES(?, ?, ?)							");
+			sql.append("	INSERT INTO mrktcustomer(customerid, customername) VALUES(?, ?)		");
+			
+			int customerCount = jdbcTemplate.update(sql.toString(), customer.getCustomerId(), customer.getCustomerName());
+			
+			if (customerCount > 0) {
+				sql.delete(0, sql.length());
+				sql.append("	INSERT INTO itemlist(customerid, itemid, item, price)	")
+				   .append("		VALUES(?, ?, ?, ?)									");
 
-			addedItem = jdbcTemplate.update(sql.toString(),
-					new Object[] { product.getProductId(), product.getProductName(), product.getProductPrice() });
+				addedItem = jdbcTemplate.update(sql.toString(), new Object[] { customer.getCustomerId(),
+						product.getProductId(), product.getProductName(), product.getProductPrice() });
+			}
 
 		} catch (Exception e) {
 			MarketExceptionLog.catchException(
@@ -42,17 +50,19 @@ public class MarketDaoImpl implements MarketDao {
 	}
 
 	@Override
-	public List<Product> getItemList() {
+	public List<Product> getItemList(Customer customer) {
 		
 		List<Product> itemList = null;
 		
 		StringBuffer sql = new StringBuffer();
 		
 		try {
-			sql.append("	SELECT itemid, item, price		")
-			   .append("		FROM itemlist				");
 			
-			itemList = jdbcTemplate.query(sql.toString(), new RowMapper<Product>() {
+			sql.delete(0, sql.length());
+			sql.append("	SELECT customerid, itemid, item, price		")
+			   .append("		FROM itemlist WHERE customerid = ?		");
+			
+			itemList = jdbcTemplate.query(sql.toString(), new Object[]{customer.getCustomerId()}, new RowMapper<Product>() {
 
 				@Override
 				public Product mapRow(ResultSet rs, int no) throws SQLException {
@@ -72,6 +82,40 @@ public class MarketDaoImpl implements MarketDao {
 		}
 		
 		return itemList;
+	}
+
+	@Override
+	public List<Customer> searchCustomer(Customer customer) {
+		
+		List<Customer> listCustomer = null;
+		
+		StringBuffer sql = new StringBuffer();
+		
+		try { 
+			
+			sql.append("	SELECT customerid, customername FROM mrktcustomer 			")
+			   .append("	WHERE customername like ?	"); 
+			
+			 listCustomer = jdbcTemplate.query(sql.toString(), new Object[]{"%"+customer.getCustomerName()+"%"}, new RowMapper<Customer>() {
+
+				@Override
+				public Customer mapRow(ResultSet rs, int no) throws SQLException {
+					
+					Customer custmr = new Customer();
+					
+					custmr.setCustomerId(rs.getString("customerid"));
+					custmr.setCustomerName(rs.getString("customername"));
+					System.out.println(custmr.getCustomerName());
+					return custmr;
+				}
+			});
+		} catch (Exception e) {
+				MarketExceptionLog.catchException(
+						"Exception In MarketDaoImpl.searchCustomer() : " + MarketExceptionLog.getStackTraceAsString(e));
+		}
+		
+		
+		return listCustomer;
 	}
 
 }

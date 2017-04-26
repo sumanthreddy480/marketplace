@@ -24,9 +24,9 @@ public class MarketController {
 	@RequestMapping(value = "/market", method = RequestMethod.GET)
 	public ModelAndView getMarketHomePage(HttpServletRequest request, HttpServletResponse response) {
 
-		List<Product> productList = marketService.getItemList();
-
-		request.setAttribute("productList", productList);
+		// List<Product> productList = marketService.getItemList();
+		//
+		// request.setAttribute("productList", productList);
 
 		return new ModelAndView("/markethome");
 	}
@@ -35,7 +35,7 @@ public class MarketController {
 	public ModelAndView addProductToMarketPlace(HttpServletRequest request, HttpServletResponse response,
 			Customer customer, Product product) {
 
-		boolean itemadded = marketService.addItem(customer.getCustomerName(), product);
+		boolean itemadded = marketService.addItem(customer, product);
 
 		if (itemadded == true) {
 			request.setAttribute("message", "Item Added Successfully");
@@ -43,10 +43,20 @@ public class MarketController {
 			request.setAttribute("message", "Problem Adding an Item, Try Again");
 		}
 
-		List<Product> productList = marketService.getItemList();
+		List<Product> productList = marketService.getItemList(customer);
 
 		request.setAttribute("productList", productList);
 
 		return new ModelAndView("/productlist");
+	}
+
+	@RequestMapping(value = "/searchcustomer", method = RequestMethod.POST)
+	public ModelAndView searchCustomerByName(HttpServletRequest request, HttpServletResponse response,
+			Customer customer) {
+
+		List<Customer> listCustomer = marketService.searchCustomer(customer);
+		request.setAttribute("listCustomer", listCustomer);
+
+		return new ModelAndView("/customerlist");
 	}
 }

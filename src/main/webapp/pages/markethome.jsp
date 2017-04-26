@@ -67,8 +67,8 @@ input:focus::-webkit-input-placeholder,
 	<h1>Welcome to Market</h1>
 	
 	<div align="right"> 
-		<form action="/">
-			<input type="text" name="product" placeholder="Search" required> 
+		<form action="/searchcustomer" method="post">
+			<input type="text" name="customerName" placeholder="Search" required> 
 			<input type="submit" name="search" value="Search"> 
 		</form>
 	</div>
